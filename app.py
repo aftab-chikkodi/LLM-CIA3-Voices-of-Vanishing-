@@ -402,11 +402,15 @@ TAXON_NAMES = {
 }
 TREND_NAMES = {
     "STEEP_DECLINE": ["steep decline", "sharp decline", "significant decline", "declining sharply",
-                       "declined sharply", "large decline", "major decline"],
+                       "declined sharply", "large decline", "major decline", "plummet", "plunge",
+                       "collapse", "dwindl", "shrinking rapidly", "drastic", "severe decline",
+                       "rapid decline", "decline", "declining", "declined"],
     "MILD_DECLINE": ["mild decline", "slight decline", "small decline", "gradual decline",
-                      "slightly declining", "declined slightly"],
-    "STABLE": ["stable", "steady", "remained stable"],
-    "INCREASING": ["increasing", "increase", "increased", "rising", "rise", "growth"],
+                      "slightly declining", "declined slightly", "modest decline", "decline",
+                      "declining", "declined", "dwindl"],
+    "STABLE": ["stable", "steady", "remained stable", "holding steady", "unchanged"],
+    "INCREASING": ["increasing", "increase", "increased", "rising", "rise", "growth",
+                    "growing", "rebound", "recovering", "recovery"],
 }
 
 
@@ -449,22 +453,6 @@ try:
 except Exception as e:
     st.error(f"Could not load custom Transformer: {e}")
     st.stop()
-
-
-# ============================================================
-# SIDEBAR
-# ============================================================
-
-with st.sidebar:
-    st.markdown("### Project Pipeline")
-    steps = ["Species Data", "Custom Transformer", "Narrative Plan", "Qwen Language Model", "Fact Verification"]
-    for i, step in enumerate(steps, 1):
-        st.markdown(f'<div class="pipeline-step"><span class="pipeline-num">{i}</span>{step}</div>',
-                     unsafe_allow_html=True)
-    st.divider()
-    st.info("This deployment uses a smaller Qwen model for free CPU-based hosting. "
-            "The full 3B-parameter model and CLIP multimodal grounding run in the "
-            "companion Colab notebook, which has GPU access.")
 
 
 # ============================================================
