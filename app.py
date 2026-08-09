@@ -320,7 +320,7 @@ PLAN_TO_INSTRUCTION = {
     "OPEN_NEUTRAL": "Open in first person with a calm and observational tone.",
     "CITE_STATUS": "Clearly state your IUCN conservation status using these exact words: \"{status}\".",
     "CITE_TREND": "Describe your observed population trend as {trend}. Do not present this as a precise population count.",
-    "CITE_MAGNITUDE": "State that your numbers have changed by exactly {pct_change} over the observed period, expressed as a percentage.",
+    "CITE_MAGNITUDE": "You MUST explicitly write the number {pct_change} somewhere in your paragraph, formatted exactly like that with the percent sign. This is mandatory.",
     "CITE_REGION": "Mention that you live in {region}.",
     "CITE_TAXON_CONTEXT": "Mention that you are a {taxon} and briefly connect this to your ecological identity.",
     "CALL_TO_ACTION": "Make a direct and meaningful conservation call to action to the reader.",
