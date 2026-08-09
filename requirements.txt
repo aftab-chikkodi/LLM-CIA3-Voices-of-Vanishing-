@@ -1,7 +1,8 @@
 streamlit
-torch --index-url https://download.pytorch.org/whl/cpu
+torch
 transformers
-matplotlib
-pandas
-Pillow
 requests
+pillow
+pandas
+numpy
+accelerate
