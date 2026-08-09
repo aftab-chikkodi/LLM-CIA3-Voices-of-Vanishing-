@@ -1,0 +1,7 @@
+streamlit
+torch --index-url https://download.pytorch.org/whl/cpu
+transformers
+matplotlib
+pandas
+Pillow
+requests

@@ -1,0 +1,162 @@
+[
+  {
+    "name": "Grevy's Zebra",
+    "status": "EN",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -68.4,
+    "region": "AFRICA",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "African Forest Elephant",
+    "status": "CR",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -86.0,
+    "region": "AFRICA",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Mountain Gorilla",
+    "status": "EN",
+    "trend": "INCREASING",
+    "pct_change": 26.0,
+    "region": "AFRICA",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Shoebill Stork",
+    "status": "VU",
+    "trend": "MILD_DECLINE",
+    "pct_change": -22.0,
+    "region": "AFRICA",
+    "taxon": "BIRD"
+  },
+  {
+    "name": "Pangolin (Sunda)",
+    "status": "CR",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -80.0,
+    "region": "ASIA",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Yangtze Finless Porpoise",
+    "status": "CR",
+    "trend": "MILD_DECLINE",
+    "pct_change": -23.0,
+    "region": "ASIA",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Snow Leopard",
+    "status": "VU",
+    "trend": "MILD_DECLINE",
+    "pct_change": -10.0,
+    "region": "ASIA",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Gharial",
+    "status": "CR",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -98.0,
+    "region": "ASIA",
+    "taxon": "REPTILE"
+  },
+  {
+    "name": "Hellbender Salamander",
+    "status": "VU",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -75.0,
+    "region": "AMERICAS",
+    "taxon": "AMPHIBIAN"
+  },
+  {
+    "name": "Monarch Butterfly",
+    "status": "EN",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -72.0,
+    "region": "AMERICAS",
+    "taxon": "INSECT"
+  },
+  {
+    "name": "Atlantic Bluefin Tuna",
+    "status": "EN",
+    "trend": "INCREASING",
+    "pct_change": 36.0,
+    "region": "AMERICAS",
+    "taxon": "FISH"
+  },
+  {
+    "name": "Jaguarundi",
+    "status": "LC",
+    "trend": "MILD_DECLINE",
+    "pct_change": -8.0,
+    "region": "AMERICAS",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "European Robin",
+    "status": "LC",
+    "trend": "STABLE",
+    "pct_change": 1.8,
+    "region": "EUROPE",
+    "taxon": "BIRD"
+  },
+  {
+    "name": "European Hamster",
+    "status": "CR",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -53.0,
+    "region": "EUROPE",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Iberian Lynx",
+    "status": "EN",
+    "trend": "INCREASING",
+    "pct_change": 117.0,
+    "region": "EUROPE",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Basking Shark",
+    "status": "EN",
+    "trend": "MILD_DECLINE",
+    "pct_change": -28.0,
+    "region": "EUROPE",
+    "taxon": "FISH"
+  },
+  {
+    "name": "Kakapo",
+    "status": "CR",
+    "trend": "INCREASING",
+    "pct_change": 85.0,
+    "region": "OCEANIA",
+    "taxon": "BIRD"
+  },
+  {
+    "name": "Numbat",
+    "status": "EN",
+    "trend": "STEEP_DECLINE",
+    "pct_change": -80.0,
+    "region": "OCEANIA",
+    "taxon": "MAMMAL"
+  },
+  {
+    "name": "Wollemi Pine",
+    "status": "CR",
+    "trend": "STABLE",
+    "pct_change": 0.0,
+    "region": "OCEANIA",
+    "taxon": "PLANT"
+  },
+  {
+    "name": "Tuatara",
+    "status": "NT",
+    "trend": "STABLE",
+    "pct_change": 2.0,
+    "region": "OCEANIA",
+    "taxon": "REPTILE"
+  }
+]
