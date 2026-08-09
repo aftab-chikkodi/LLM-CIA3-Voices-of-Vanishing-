@@ -9,76 +9,251 @@ import torch.nn as nn
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # ============================================================
-# PAGE CONFIG + STYLE
+# PAGE CONFIG
 # ============================================================
 
 st.set_page_config(page_title="Voices of the Vanishing", page_icon="🌿", layout="wide")
 
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_PATH = BASE_DIR / "fact_to_plan.pt"
+DATA_PATH = BASE_DIR / "species_data.json"
+
+
+# ============================================================
+# STYLE
+# "Field journal" identity — a naturalist's specimen ledger,
+# built around a printed IUCN status meter as the signature
+# element. Palette, type and layout below are chosen for this
+# brief specifically (see design tokens in the CSS comments).
+# ============================================================
+
 st.markdown("""
 <style>
-.block-container { padding-top: 2rem; max-width: 1100px; }
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,380;0,9..144,520;0,9..144,650;1,9..144,480&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-.hero {
-    padding: 22px 26px; border-radius: 14px; margin-bottom: 22px;
-    background: linear-gradient(135deg, #0f3d2e 0%, #1a5c45 100%);
-    color: #f0fdf4;
-}
-.hero h1 { margin: 0 0 4px 0; font-size: 1.9rem; }
-.hero p { margin: 0; opacity: 0.85; font-size: 0.95rem; }
+:root{
+  --paper:      #EFF4EC;
+  --paper-card: #FBFCF9;
+  --ink:        #17261D;
+  --ink-soft:   #4C5C51;
+  --pine:       #1F5C45;
+  --pine-deep:  #0E2E22;
+  --moss:       #CFDECB;
+  --moss-line:  #DCE7D8;
+  --clay:       #A9552E;
+  --clay-soft:  #F4E4D9;
+  --gold:       #B08D3E;
+  --slate:      #46586C;
 
-.pipeline-step {
-    display: flex; align-items: center; gap: 10px; padding: 7px 0;
-    font-size: 0.88rem; color: #334155;
-}
-.pipeline-num {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px; border-radius: 50%; background: #1a5c45;
-    color: white; font-size: 0.75rem; font-weight: 600; flex-shrink: 0;
-}
-
-.fact-card {
-    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
-    padding: 12px 14px; text-align: center;
-}
-.fact-card .label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
-.fact-card .value { font-size: 1.05rem; color: #0f3d2e; font-weight: 700; margin-top: 2px; }
-
-.plan-chip {
-    display: inline-block; padding: 5px 12px; margin: 3px 5px 3px 0; border-radius: 8px;
-    background: #ecfdf5; border: 1px solid #a7f3d0; font-size: 0.8rem;
-    color: #065f46; font-weight: 500;
+  --cr:  #B3261E;
+  --en:  #C9722A;
+  --vu:  #B99423;
+  --nt:  #6B8E4E;
+  --lc:  #1F5C45;
 }
 
-.narrative-box {
-    background: #fffbeb; border-left: 4px solid #d97706; padding: 20px 24px;
-    border-radius: 8px; font-size: 1.05rem; line-height: 1.7; font-style: italic;
-    color: #451a03;
+html, body, [class*="css"]{
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+.stApp{
+  background: var(--paper);
+}
+.block-container{
+  padding-top: 2.2rem;
+  padding-bottom: 3rem;
+  max-width: 980px;
+}
+h1, h2, h3 { font-family: 'Fraunces', serif; color: var(--ink); }
+::selection{ background: var(--moss); }
+
+/* ---------- Focus visibility (accessibility floor) ---------- */
+a:focus-visible, button:focus-visible, [role="button"]:focus-visible{
+  outline: 2px solid var(--pine); outline-offset: 2px;
 }
 
-.check-pill {
-    display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px;
-    border-radius: 20px; font-size: 0.83rem; font-weight: 600; margin: 3px 6px 3px 0;
+/* ---------- HERO ---------- */
+.hero{
+  position: relative;
+  padding: 40px 44px 34px 44px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+  background:
+    radial-gradient(1100px 260px at 88% -40%, rgba(255,255,255,0.06), transparent 60%),
+    linear-gradient(155deg, var(--pine-deep) 0%, var(--pine) 100%);
+  color: #EAF3EC;
+  overflow: hidden;
+  border: 1px solid var(--pine-deep);
 }
-.check-pass { background: #dcfce7; color: #166534; }
-.check-fail { background: #fee2e2; color: #991b1b; }
+.hero::after{
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 84px);
+  pointer-events: none;
+}
+.hero .eyebrow{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #B9D9C6; margin-bottom: 10px; display:flex; align-items:center; gap:8px;
+}
+.hero .eyebrow .dot{
+  width:6px; height:6px; border-radius:50%; background:#7FD9AE; display:inline-block;
+}
+.hero h1{
+  margin: 0 0 6px 0; font-size: 2.35rem; font-weight: 520; letter-spacing: -0.01em;
+  color: #F4FBF6; font-style: italic;
+}
+.hero p{ margin: 0; opacity: 0.82; font-size: 0.98rem; max-width: 46em; line-height: 1.5; color: #E3F0E6; }
 
-.section-label {
-    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    color: #1a5c45; margin: 22px 0 8px 0;
+/* ---------- SECTION LABEL ---------- */
+.section-label{
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--pine); margin: 30px 0 10px 0;
+  display: flex; align-items: center; gap: 10px;
 }
+.section-label::after{
+  content: ""; flex: 1; height: 1px; background: var(--moss-line);
+}
+
+/* ---------- SPECIMEN CARD ---------- */
+.specimen{
+  background: var(--paper-card);
+  border: 1px solid var(--moss);
+  border-radius: 6px;
+  padding: 26px 30px 22px 30px;
+}
+.specimen .name-row{
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px;
+}
+.specimen .name-row h2{ margin: 0; font-size: 1.55rem; font-weight: 600; }
+.specimen .sci{ font-style: italic; color: var(--ink-soft); font-size: 0.95rem; }
+.specimen .tagline{ color: var(--ink-soft); font-size: 0.86rem; margin-bottom: 18px; }
+
+/* status meter — the signature element */
+.status-meter{ margin: 16px 0 6px 0; }
+.status-meter .track{
+  display: flex; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid rgba(0,0,0,0.06);
+}
+.status-meter .seg{ flex: 1; position: relative; }
+.status-meter .labels{
+  display: flex; margin-top: 7px; font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.66rem; letter-spacing: 0.05em; color: var(--ink-soft);
+}
+.status-meter .labels span{ flex: 1; text-align: center; }
+.status-meter .labels span.current{ color: var(--ink); font-weight: 600; }
+.pin{
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 7px solid var(--ink);
+}
+
+.facts-row{
+  display: flex; gap: 22px; flex-wrap: wrap; margin-top: 20px;
+  padding-top: 16px; border-top: 1px dashed var(--moss);
+}
+.facts-row .fact{ min-width: 108px; }
+.facts-row .fact .k{
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.66rem; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.facts-row .fact .v{ font-size: 0.98rem; font-weight: 600; color: var(--ink); margin-top: 2px; }
+
+/* ---------- PLAN SEQUENCE ---------- */
+.plan-seq{ display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+.plan-item{ display: flex; align-items: center; }
+.plan-chip{
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 13px; margin: 4px 0; border-radius: 20px;
+  background: var(--paper-card); border: 1px solid var(--moss);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.02em;
+  color: var(--pine-deep);
+}
+.plan-chip .idx{
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; background: var(--pine);
+  color: white; font-size: 0.62rem; font-weight: 600; flex-shrink: 0;
+}
+.plan-arrow{ color: var(--moss); margin: 0 4px; font-size: 0.8rem; }
+
+/* ---------- NARRATIVE PAGE ---------- */
+.journal-page{
+  position: relative;
+  background: var(--paper-card);
+  border: 1px solid var(--moss);
+  border-left: 3px solid var(--pine);
+  border-radius: 4px;
+  padding: 30px 34px 26px 34px;
+  background-image: repeating-linear-gradient(
+    to bottom, transparent, transparent 34px, var(--moss-line) 35px
+  );
+  background-position: 0 6px;
+}
+.journal-page .quote-mark{
+  font-family: 'Fraunces', serif; font-style: italic; font-size: 2.6rem;
+  color: var(--pine); line-height: 0; position: relative; top: 18px;
+}
+.journal-page p{
+  font-family: 'Fraunces', serif; font-size: 1.14rem; line-height: 35px;
+  color: var(--ink); margin: 0; font-style: italic; font-weight: 380;
+}
+.journal-page .byline{
+  margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--moss);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+
+/* ---------- GROUNDING CHECK ---------- */
+.ledger{ display: flex; flex-direction: column; gap: 0; border: 1px solid var(--moss); border-radius: 6px; overflow: hidden; }
+.ledger-row{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 18px; background: var(--paper-card);
+  border-bottom: 1px solid var(--moss-line); font-size: 0.88rem; color: var(--ink);
+}
+.ledger-row:last-child{ border-bottom: none; }
+.ledger-row .mark{
+  display: inline-flex; align-items: center; gap: 9px; font-weight: 500;
+}
+.ledger-row .badge{
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px;
+}
+.badge.ok{ background: #E1EEDF; color: var(--pine-deep); }
+.badge.fail{ background: var(--clay-soft); color: var(--clay); }
+.tick{ color: var(--pine); font-weight: 700; }
+.cross{ color: var(--clay); font-weight: 700; }
+
+.verdict{
+  margin-top: 14px; padding: 13px 18px; border-radius: 6px; font-size: 0.9rem;
+  display:flex; align-items:center; gap:10px;
+}
+.verdict.pass{ background: #E1EEDF; color: var(--pine-deep); border: 1px solid #BFDCC0; }
+.verdict.warn{ background: var(--clay-soft); color: #7A3D1F; border: 1px solid #E3C7AE; }
+
+.footnote{
+  margin-top: 10px; font-size: 0.83rem; color: var(--ink-soft); line-height: 1.55;
+  padding: 14px 18px; background: rgba(255,255,255,0.5); border: 1px dashed var(--moss); border-radius: 6px;
+}
+
+.numbers-caption{
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--ink-soft); margin-top: 8px;
+}
+
+footer{ visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="hero">
+  <div class="eyebrow"><span class="dot"></span>MSc Artificial Intelligence &amp; Machine Learning — CIA 3</div>
   <h1>🌿 Voices of the Vanishing</h1>
-  <p>AI-grounded conservation narrative generator &mdash; MSc Artificial Intelligence &amp; Machine Learning, CIA 3</p>
+  <p>A grounded conservation narrative generator. A custom sequence-to-sequence Transformer reads a
+  species' IUCN status, population trend, region and taxon, and plans a narrative structure — a
+  language model then writes the first-person account, and every claim it makes is checked back
+  against the source facts before it's shown.</p>
 </div>
 """, unsafe_allow_html=True)
-
-BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "fact_to_plan.pt"
-DATA_PATH = BASE_DIR / "species_data.json"
 
 
 # ============================================================
@@ -240,6 +415,15 @@ READABLE_TAXON = {
     "PLANT": "plant", "INSECT": "insect", "FISH": "fish", "OTHER_TAXON": "living thing",
 }
 
+# Display-only (card / meter), kept separate from the prose labels above.
+TREND_CARD_LABEL = {
+    "STEEP_DECLINE": "Steep decline", "MILD_DECLINE": "Mild decline",
+    "STABLE": "Stable", "INCREASING": "Increasing",
+}
+STATUS_ORDER = ["CR", "EN", "VU", "NT", "LC"]
+STATUS_SHORT = {"CR": "CR", "EN": "EN", "VU": "VU", "NT": "NT", "LC": "LC"}
+STATUS_COLOR = {"CR": "var(--cr)", "EN": "var(--en)", "VU": "var(--vu)", "NT": "var(--nt)", "LC": "var(--lc)"}
+
 # ============================================================
 # LOAD SPECIES DATA
 # ============================================================
@@ -326,6 +510,14 @@ PLAN_TO_INSTRUCTION = {
     "CALL_TO_ACTION": "Make a direct and meaningful conservation call to action to the reader.",
     "CLOSE_WARNING": "Close with a clear warning about what could be lost if conservation efforts are not maintained.",
     "CLOSE_HOPE": "Close with a note of cautious hope about continued conservation efforts.",
+}
+
+# Short, human labels for the plan chips (display only)
+PLAN_CHIP_LABEL = {
+    "OPEN_URGENT": "open · urgent", "OPEN_REFLECTIVE": "open · reflective", "OPEN_NEUTRAL": "open · neutral",
+    "CITE_STATUS": "cite status", "CITE_TREND": "cite trend", "CITE_MAGNITUDE": "cite magnitude",
+    "CITE_REGION": "cite region", "CITE_TAXON_CONTEXT": "cite taxon",
+    "CALL_TO_ACTION": "call to action", "CLOSE_HOPE": "close · hope", "CLOSE_WARNING": "close · warning",
 }
 
 
@@ -435,6 +627,52 @@ def verify_narrative(narrative, status, trend, region, taxon, pct_change, tolera
 
 
 # ============================================================
+# SMALL DISPLAY HELPERS
+# ============================================================
+
+def render_status_meter(current_status):
+    segs = "".join(
+        f'<div class="seg" style="background:{STATUS_COLOR[s]};">'
+        + ('<div class="pin"></div>' if s == current_status else "")
+        + "</div>"
+        for s in STATUS_ORDER
+    )
+    labels = "".join(
+        f'<span class="{"current" if s == current_status else ""}">{STATUS_SHORT[s]}</span>'
+        for s in STATUS_ORDER
+    )
+    return f'<div class="status-meter"><div class="track">{segs}</div><div class="labels">{labels}</div></div>'
+
+
+def render_plan_sequence(plan_tokens):
+    shown = [t for t in plan_tokens if t not in ("SOS", "EOS", "PAD")]
+    parts = []
+    for i, t in enumerate(shown, start=1):
+        label = PLAN_CHIP_LABEL.get(t, t.lower().replace("_", " "))
+        parts.append(f'<span class="plan-item"><span class="plan-chip"><span class="idx">{i}</span>{label}</span>'
+                      + ('<span class="plan-arrow">&#8594;</span>' if i < len(shown) else "") + "</span>")
+    return f'<div class="plan-seq">{"".join(parts)}</div>'
+
+
+def render_ledger(checks):
+    rows = [
+        ("Conservation status cited", checks["status_mentioned"]),
+        ("Population trend cited", checks["trend_mentioned"]),
+        ("Region cited", checks["region_mentioned"]),
+        ("Taxonomic context cited", checks["taxon_mentioned"]),
+        ("Record-change percentage matches source", checks["percentage_match"]),
+    ]
+    html_rows = []
+    for label, ok in rows:
+        mark = '<span class="tick">&#10003;</span>' if ok else '<span class="cross">&#10007;</span>'
+        badge = '<span class="badge ok">grounded</span>' if ok else '<span class="badge fail">not found</span>'
+        html_rows.append(
+            f'<div class="ledger-row"><span class="mark">{mark} {label}</span>{badge}</div>'
+        )
+    return f'<div class="ledger">{"".join(html_rows)}</div>'
+
+
+# ============================================================
 # LOAD EVERYTHING
 # ============================================================
 
@@ -464,79 +702,99 @@ if not species_records:
     st.stop()
 
 species_names = [r["name"] for r in species_records]
-selected_name = st.selectbox("Select a species", species_names)
+
+sel_col, temp_col = st.columns([2, 1])
+with sel_col:
+    selected_name = st.selectbox("Select a species", species_names, label_visibility="visible")
+with temp_col:
+    temperature = st.slider(
+        "Narrative temperature", 0.1, 1.2, 0.7, 0.1,
+        help="Higher values produce more varied, less predictable prose. "
+             "Does not affect the transformer's plan, only the LLM's wording."
+    )
+
 record = next(r for r in species_records if r["name"] == selected_name)
 
-st.subheader(f"🌿 {record['name']}")
-if record["scientific_name"]:
-    st.caption(f"*{record['scientific_name']}*")
+st.markdown(f"""
+<div class="specimen">
+  <div class="name-row">
+    <h2>{record['name']}</h2>
+    {f'<span class="sci">{record["scientific_name"]}</span>' if record['scientific_name'] else ''}
+  </div>
+  <div class="tagline">IUCN Red List position, live from the source record</div>
+  {render_status_meter(record['status'])}
+  <div class="facts-row">
+    <div class="fact"><div class="k">GBIF Trend</div><div class="v">{TREND_CARD_LABEL.get(record['trend'], record['trend'])}</div></div>
+    <div class="fact"><div class="k">Region</div><div class="v">{READABLE_REGION.get(record['region'], record['region'])}</div></div>
+    <div class="fact"><div class="k">Taxon</div><div class="v">{READABLE_TAXON.get(record['taxon'], record['taxon']).capitalize()}</div></div>
+    <div class="fact"><div class="k">Record Change</div><div class="v">{record['pct_change']:+.1f}%</div></div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-c1, c2, c3, c4, c5 = st.columns(5)
-fact_values = [
-    ("IUCN Status", READABLE_STATUS.get(record["status"], record["status"])),
-    ("GBIF Trend", READABLE_TREND.get(record["trend"], record["trend"]).replace("a ", "").capitalize()),
-    ("Region", READABLE_REGION.get(record["region"], record["region"])),
-    ("Taxon", READABLE_TAXON.get(record["taxon"], record["taxon"]).capitalize()),
-    ("Record Change", f"{record['pct_change']:+.1f}%"),
-]
-for col, (label, value) in zip([c1, c2, c3, c4, c5], fact_values):
-    with col:
-        st.markdown(f'<div class="fact-card"><div class="label">{label}</div>'
-                     f'<div class="value">{value}</div></div>', unsafe_allow_html=True)
-
-st.markdown('<div class="section-label">Generation Settings</div>', unsafe_allow_html=True)
-temperature = st.slider("Narrative temperature", 0.1, 1.2, 0.7, 0.1,
-                         help="Higher values produce more varied, less predictable prose. "
-                              "Does not affect the transformer's plan, only the LLM's wording.")
-
-generate = st.button("🌱 Generate Conservation Narrative", type="primary", use_container_width=True)
+st.write("")
+generate = st.button("🌱  Generate Conservation Narrative", type="primary", use_container_width=True)
 
 if generate:
     facts = {"status": record["status"], "trend": record["trend"],
               "region": record["region"], "taxon": record["taxon"], "pct_change": record["pct_change"]}
 
-    with st.spinner("Running the custom transformer..."):
+    with st.spinner("Running the custom Transformer to plan the narrative structure…"):
         plan = generate_plan(transformer, record["status"], record["trend"], record["region"], record["taxon"])
 
-    st.markdown('<div class="section-label">Transformer Narrative Plan</div>', unsafe_allow_html=True)
-    chips = "".join(f'<span class="plan-chip">{t}</span>' for t in plan if t not in ("SOS", "EOS"))
-    st.markdown(chips, unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Narrative Plan</div>', unsafe_allow_html=True)
+    st.markdown(render_plan_sequence(plan), unsafe_allow_html=True)
 
     prompt = build_prompt(plan, facts, record["name"])
 
-    with st.spinner("Qwen is writing the narrative (CPU inference, ~10-30s)..."):
+    with st.spinner("The language model is writing the narrative (CPU inference, ~10–30s)…"):
         try:
             tokenizer, llm = load_llm()
             narrative = generate_narrative(tokenizer, llm, prompt, temperature)
         except Exception as e:
-            st.error(f"Language model error: {e}")
+            st.markdown(
+                f'<div class="footnote">The language model could not be reached: {e}. '
+                'Please try again — the plan above was still generated successfully.</div>',
+                unsafe_allow_html=True,
+            )
             st.stop()
 
     st.markdown('<div class="section-label">Voice of the Species</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="narrative-box">{narrative}</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="journal-page">
+      <span class="quote-mark">&ldquo;</span>
+      <p>{narrative}</p>
+      <div class="byline">— {record['name']}, in its own words</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     checks = verify_narrative(narrative, record["status"], record["trend"], record["region"],
                                record["taxon"], record["pct_change"])
 
-    st.markdown('<div class="section-label">Fact Verification</div>', unsafe_allow_html=True)
-    labels = [("Conservation Status", checks["status_mentioned"]), ("Occurrence Trend", checks["trend_mentioned"]),
-              ("Region", checks["region_mentioned"]), ("Taxonomic Context", checks["taxon_mentioned"]),
-              ("Percentage Match", checks["percentage_match"])]
-    pills = "".join(
-        f'<span class="check-pill {"check-pass" if ok else "check-fail"}">{"✓" if ok else "✗"} {label}</span>'
-        for label, ok in labels
-    )
-    st.markdown(pills, unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Grounding Check</div>', unsafe_allow_html=True)
+    st.markdown(render_ledger(checks), unsafe_allow_html=True)
 
     if checks["numbers_found"]:
-        st.caption(f"Numbers detected in narrative: {checks['numbers_found']}")
+        nums = ", ".join(f"{n:g}%" for n in checks["numbers_found"])
+        st.markdown(f'<div class="numbers-caption">Numbers detected in narrative: {nums}</div>', unsafe_allow_html=True)
 
     if checks["passed"]:
-        st.success("Narrative passed all fact-verification checks.")
+        st.markdown(
+            '<div class="verdict pass">&#10003; This narrative is fully grounded in the source record.</div>',
+            unsafe_allow_html=True,
+        )
     else:
-        st.warning("Narrative did not pass all verification checks. "
-                    "Try regenerating — the LLM occasionally omits a required detail on the smaller model.")
+        st.markdown(
+            '<div class="verdict warn">This narrative is missing one or more required details. '
+            'Try generating again — the smaller language model occasionally omits a required '
+            'detail, and regenerating usually resolves it.</div>',
+            unsafe_allow_html=True,
+        )
 
-    st.markdown('<div class="section-label">Interpretation</div>', unsafe_allow_html=True)
-    st.info("The GBIF percentage shown here represents a change in occurrence-record counts between "
-            "observation periods. It should not be interpreted as a direct measurement of population size.")
+    st.markdown(
+        '<div class="footnote"><strong>Reading the record change.</strong> The percentage above reflects '
+        'a change in occurrence-record counts between observation periods on GBIF, not a direct '
+        'population count. It is a proxy for how often the species is being recorded, and should be '
+        'read alongside the IUCN status rather than in place of it.</div>',
+        unsafe_allow_html=True,
+    )
